@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  admin 模块 —— 管理域（v2 扩展：路由配置管理 + 路由决策分析）
+
+  职责：
+    AdminService          用户管理（配额调整/禁用/角色）+ 全局看板
+    ModelAdminService     模型 CRUD + 价格版本管理（更新后主动失效 router 缓存）
+    RoutingAdminService   路由开关/权重热更新 + 路由分析（FR-11/FR-05 管理面）
+    ChatHistoryService    聊天记录检索（关键词 FULLTEXT / 无关键词走调用日志）
+    UserSelfService       用户自助（改密/配额用量/Key 管理）
+    Controllers           /admin/**（ADMIN 角色）、/api/user/**（登录用户）
+
+  依赖方向：common + auth + billing + router（不依赖 access/app）。
+  BCrypt 依赖经 ai-gateway-auth 传递（改密场景复用同一编码器口径）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-admin</artifactId>
+    <name>ai-gateway-admin</name>
+    <description>管理域：用户/模型/路由配置管理 + 看板 + 用户自助</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-billing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-router</artifactId>
+        </dependency>
+        <!-- 改密场景复用 BCrypt（显式声明，避免依赖传递隐式性） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <!-- OpenAPI 注解（@Tag/@Operation，版本由父 POM 管理） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+    </dependencies>
+</project>

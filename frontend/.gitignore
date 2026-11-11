@@ -1,0 +1,14 @@
+# ==================== Node / 前端 ====================
+node_modules/
+dist/
+*.local
+*.tsbuildinfo
+vite-err.log
+*.log
+
+# ==================== IDE / OS ====================
+.idea/
+*.iml
+.vscode/
+Thumbs.db
+.DS_Store

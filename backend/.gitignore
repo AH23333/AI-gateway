@@ -1,0 +1,41 @@
+# ==================== Java / Maven ====================
+**/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ==================== 运行时产物 ====================
+# 日志（logback 落盘 + 脚本重定向）
+logs/
+*.log
+app-err.log
+# 报文采样目录（D6）
+data/
+# JaCoCo 报告（随构建生成）
+**/site/jacoco/
+
+# ==================== 环境与密钥 ====================
+.env
+.env.*
+*.pem
+*.keystore
+
+# ==================== 监控中间件二进制（体积大，不入库） ====================
+monitoring/prometheus*/
+monitoring/grafana*/
+
+# ==================== Redis 发行包（第三方二进制，脚本引用但不入库） ====================
+redis/
+
+# ==================== IDE / OS ====================
+.idea/
+*.iml
+.vscode/
+Thumbs.db
+.DS_Store
+
+# ==================== 本地凭据与运行时快照（不入库） ====================
+# seed.sql 含真实智谱 API Key；仓库只提交脱敏模板 seed.example.sql
+sql/seed.sql
+dump.rdb
+*.rdb

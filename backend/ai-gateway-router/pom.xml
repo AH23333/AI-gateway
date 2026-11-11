@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  router 模块 —— 编排域（v2 核心：智能路由 + OpenAI 协议 + 流式）
+
+  职责：
+    ChatController     POST /v1/chat/completions（OpenAI 协议面，FR-14）
+    ChatService        校验 → 预扣 → 路由/指定 → 调用 → 结算 → 事件发布 的编排主线
+    RoutingEngine      过滤链（健康/预算/SLA/复杂度）+ 加权打分（FR-01~05, FR-12）
+    OpenAiCompatClient 上游调用（JDK HttpClient：阻塞 + SSE 流式 + 可取消，OpenAI 兼容协议）
+    ModelConfigService 模型/价格/路由配置缓存（Caffeine 60s + 管理端主动失效）
+    RouteStatsService  Redis 路由统计（延迟 P90/质量分/健康熔断，1.md §8.2）
+    PayloadStore       D6 报文采样落盘（每分钟首请求采样）
+    RouteStatsListener SettleEvent → 路由统计窗口更新
+
+  依赖方向：common + auth（API Key 前置校验）+ billing（预扣/结算/事件），不依赖 admin/access。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-router</artifactId>
+    <name>ai-gateway-router</name>
+    <description>编排域：OpenAI 协议对话 + 智能路由 + 流式 SSE + 上游客户端</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-billing</artifactId>
+        </dependency>
+        <!-- 本地缓存：模型元数据/价格/路由配置 60s 缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <!-- OpenAPI 注解（@Tag/@Operation，版本由父 POM 管理） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <!-- Micrometer 核心：MetricsRegistry 注入 MeterRegistry，进程内指标桥接 Prometheus -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>

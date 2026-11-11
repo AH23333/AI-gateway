@@ -1,0 +1,13 @@
+# ============================================================
+# AI Gateway 抓取配置（Prometheus Windows 单机版）
+# 5s 抓取间隔：与前端监控页轮询、60s 逐秒窗口展示粒度对齐
+# ============================================================
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: ai-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['localhost:10011']

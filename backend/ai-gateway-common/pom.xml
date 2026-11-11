@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  common 模块 —— 共享内核（无业务逻辑）
+
+  收敛所有模块共用的资产：
+    constant/  常量与错误码（BizCodeEnum 是全系统唯一错误出口）
+    dto/       跨模块传输对象（Result 统一响应体、ChatRequest OpenAI 兼容请求）
+    pojo/      数据库实体（MyBatis-Plus 注解，表结构见 sql/init.sql）
+    exception/ BizException + 全局异常处理器
+    util/      JwtUtil(jjwt 0.12)/JsonUtil/IdGen(雪花 traceId)/TokenEstimator
+    config/    MyBatis-Plus/Jackson/JWT 初始化配置
+
+  注意：common 不依赖任何业务模块（依赖方向永远指向 common）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-common</artifactId>
+    <name>ai-gateway-common</name>
+    <description>共享内核：常量/DTO/实体/异常/工具</description>
+
+    <dependencies>
+        <!-- Web：提供 Jackson / spring-webmvc 注解（全局异常处理器、JsonUtil 需要） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Redis：全模块共享（黑名单/限流/路由统计），由 app 模块统一配置连接 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus（Boot3 线） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <!-- jjwt 0.12：api 编译期 + impl/jackson 运行期 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+        </dependency>
+        <!-- 雪花算法（traceId；workerId 本地配置，无 DB 分配，替代原 UidGenerator） -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>

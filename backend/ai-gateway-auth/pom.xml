@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  auth 模块 —— 凭证域（v2 扩展：API Key 划入凭证域）
+
+  职责：
+    AuthService    注册/登录/刷新/登出（双 Token + Redis 黑名单 + BCrypt）
+    ApiKeyService  API Key 生命周期（哈希化存储，选型书 3.1 修 P8）
+    mappers        UserMapper / RefreshTokenMapper / ApiKeyMapper
+
+  v2 模块依赖调整：
+    API Key 从 admin 域划入 auth 域（凭证统一管理），
+    router 依赖 auth 提供 hasActiveApiKey/getFirstActive 前置校验，
+    admin 依赖 auth 提供 Key 管理界面 —— 依赖方向保持单向无环。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-auth</artifactId>
+    <name>ai-gateway-auth</name>
+    <description>凭证域：双 Token 认证 + API Key 管理</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-common</artifactId>
+        </dependency>
+        <!-- BCrypt 慢哈希（仅 crypto 包，不引入完整 Spring Security） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <!-- OpenAPI 注解（@Tag/@Operation，版本由父 POM 管理） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+    </dependencies>
+</project>

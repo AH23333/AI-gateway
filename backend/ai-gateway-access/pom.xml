@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  access 模块 —— 统一入口防护层（原 Spring Cloud Gateway 三过滤器的 Servlet 化移植）
+
+  职责（基线语义保留，1.md §2.3 / §2.4）：
+    TraceIdFilter   全链路 traceId（MDC + X-Trace-Id 响应头）
+    JwtAuthFilter   认证（JWT 双 Token / sk- API Key 双路径）+ 角色守卫 + 身份头注入
+    RateLimitFilter Redis Lua 固定窗口限流（用户/IP + 路径维度）
+
+  v2 变化：
+  - 网关不再是独立进程，模块内改为 jakarta.servlet Filter（FilterRegistrationBean 注册）；
+  - 错误响应双协议：/v1/** → OpenAI error JSON + 语义化 HTTP 状态码；
+    其余 → HTTP 200 + Result（与 GlobalExceptionHandler 口径一致，前端单一契约）；
+  - 新增 API Key 直连鉴权（Authorization: Bearer sk-xxx，agent/LangChain 场景）。
+
+  注意：access 依赖 auth（ApiKeyService/UserMapper），不依赖 router/billing/admin —— 依赖方向单向。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-access</artifactId>
+    <name>ai-gateway-access</name>
+    <description>统一入口防护：认证/限流/全链路追踪</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-common</artifactId>
+        </dependency>
+        <!-- API Key 哈希检索 + 用户状态校验（API Key 直连鉴权路径） -->
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-auth</artifactId>
+        </dependency>
+    </dependencies>
+</project>

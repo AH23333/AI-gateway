@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AI Gateway 模块化单体后端 —— 父 POM
+
+  架构说明（对应《DB-design-重构技术选型书》v1.4 第四章）：
+    六服务微服务收敛为 1 个 JVM 的模块化单体，模块边界与单向依赖保持不变：
+        access(网关过滤器) → common
+        auth(凭证) → common
+        billing(预扣-结算) → common
+        router(编排/流式/智能路由) → common, auth, billing
+        admin(管理端) → common, auth, billing, router
+        app(启动模块，唯一 Spring Boot 入口)
+    依赖方向严禁反转（如 billing 不得依赖 router），拆分微服务时按模块直接拆出。
+
+  升栈要点（选型书 4.2）：
+    Spring Cloud 全家桶清零（Feign/Nacos/Sentinel 随重构删除）；
+    Java 21 + Spring Boot 3.2.5 + jjwt 0.12 + MyBatis-Plus 3.5.5（boot3 线）+ springdoc（替代 knife4j）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.ai.gateway</groupId>
+    <artifactId>ai-gateway-backend</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>ai-gateway-backend</name>
+    <description>AI Gateway 智能路由平台 - 模块化单体后端（Java 21 + Spring Boot 3.2）</description>
+
+    <modules>
+        <module>ai-gateway-common</module>
+        <module>ai-gateway-auth</module>
+        <module>ai-gateway-billing</module>
+        <module>ai-gateway-router</module>
+        <module>ai-gateway-admin</module>
+        <module>ai-gateway-access</module>
+        <module>ai-gateway-app</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- 统一依赖版本（子模块不再写版本号） -->
+        <jjwt.version>0.12.5</jjwt.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <springdoc.version>2.3.0</springdoc.version>
+        <hutool.version>5.8.25</hutool.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- ========== 内部模块 ========== -->
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-billing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-router</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-admin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ai.gateway</groupId>
+                <artifactId>ai-gateway-access</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- ========== 三方依赖 ========== -->
+            <!-- jjwt 0.12.x：parser API 与 0.9 完全不兼容，此处集中管理三件套 -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <!-- MyBatis-Plus Boot3 专用 starter（3.4.x 不兼容 Spring Boot 3） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!-- springdoc：Boot 3 线的 OpenAPI3 文档（替代 knife4j 2.x） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <!-- Hutool：仅用其 Snowflake 实现（traceId 生成，无 DB 分配） -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- Caffeine：进程内本地缓存（模型/价格/路由配置 60s 缓存 + 管理端主动失效） -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>3.1.8</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- 全模块公共依赖：Lombok（编译期）+ 测试三件套（JUnit5/Mockito/AssertJ，版本随 Boot BOM） -->
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- JaCoCo 覆盖率：prepare-agent 注入 surefire，report 绑 test 阶段
+                 （报告 target/site/jacoco/index.html；与 spring-boot repackage 无冲突） -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

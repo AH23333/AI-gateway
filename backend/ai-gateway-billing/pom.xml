@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  billing 模块 —— 配额账务域（v2 重写为两段式，选型书第五章）
+
+  链路语义（与原 MQ 计费链路的本质区别）：
+    账务 = 同步强一致：reserve（条件更新防超扣）→ 模型调用 → settle（单事务：
+           关闭预扣流水 + t_user 实际用量累加 + t_invoke_log_v2 明细落库）；
+    日志 = 异步弱一致：结算成功后发 SettleEvent（进程内 ApplicationEvent）
+           → 内存队列批量落库（t_chat_message / t_billing_daily），
+           最多丢一个 flush 窗口（≤1s）的明细，账务不受影响（选型书 3.5 有界取舍）。
+
+  组件：
+    QuotaService            reserve / settle 两段式核心（幂等锚点 = reservation.status 抢占）
+    SettleEvent             结算事件（进程内，路由统计/日志旁路统一挂点）
+    ReservationReconciler   兜底回滚定时任务（进程被 kill -9 后预扣水位自动恢复）
+    ChatLogListener         SettleEvent 监听 → 组装 D5 会话消息 + D6 采样报文落盘 + 日汇总入队
+    BatchLogWriter          内存队列 → 每 500ms 或 500 条批量写库（@PreDestroy 停机 flush）
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ai.gateway</groupId>
+        <artifactId>ai-gateway-backend</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ai-gateway-billing</artifactId>
+    <name>ai-gateway-billing</name>
+    <description>配额账务域：两段式计费 reserve/settle/reconcile + 异步批量日志</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ai.gateway</groupId>
+            <artifactId>ai-gateway-common</artifactId>
+        </dependency>
+        <!-- Micrometer 核心：BatchLogWriter 队列水位以 Prometheus gauge 暴露 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>
