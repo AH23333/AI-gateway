@@ -2,7 +2,7 @@ import http from './request'
 import type {
   ApiResponse, Page, User, UserInfo, ModelInfo, ModelUpsertRequest, ModelPrice,
   ApiKeyVO, ModelOption, AdminDashboard, InvokeLog, ChatMessageRecord, ChatLogDetail,
-  RoutingConfig, RoutingAnalysisItem, RuntimeMetrics, SystemConfig,
+  RoutingConfig, RoutingAnalysisItem, RuntimeMetrics, SystemConfig, AuditLog, AuditLogQuery,
 } from './types'
 
 // ==================== 用户管理（/admin/users） ====================
@@ -161,4 +161,11 @@ export function getSystemSettings(): Promise<ApiResponse<SystemConfig[]>> {
 /** 单键更新（不同键校验规则不同，逐键保存；即时生效免重启） */
 export function updateSystemSetting(data: { key: string; value: string }): Promise<ApiResponse<SystemConfig>> {
   return http.put('/admin/settings', data)
+}
+
+// ==================== 操作审计（/admin/audit-logs，v2.5 操作审计） ====================
+
+/** 审计日志分页检索（who/when/what/结果，逐项可选过滤） */
+export function getAuditLogs(params: AuditLogQuery): Promise<ApiResponse<Page<AuditLog>>> {
+  return http.get('/admin/audit-logs', { params })
 }

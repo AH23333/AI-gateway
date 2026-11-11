@@ -310,3 +310,35 @@ export interface PublicSettings {
   siteName: string
   announcement: string
 }
+
+// ==================== 操作审计（v2.5 /admin/audit-logs） ====================
+
+/** t_audit_log 行（审计页，who/when/what/结果四要素） */
+export interface AuditLog {
+  id: number
+  userId: number | null
+  username: string
+  /** 动作编码（USER_STATUS / SETTING_UPDATE 等） */
+  action: string
+  actionDesc: string
+  httpMethod: string
+  uri: string
+  params: string | null
+  /** 1=成功 0=失败 */
+  success: number
+  errorMsg: string | null
+  ip: string | null
+  costMs: number | null
+  createdAt: string
+}
+
+/** 审计检索参数（逐项可选过滤） */
+export interface AuditLogQuery {
+  page: number
+  size: number
+  username?: string
+  action?: string
+  success?: number
+  startTime?: string
+  endTime?: string
+}

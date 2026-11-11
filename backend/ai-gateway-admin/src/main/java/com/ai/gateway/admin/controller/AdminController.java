@@ -1,5 +1,6 @@
 package com.ai.gateway.admin.controller;
 
+import com.ai.gateway.admin.annotation.Audited;
 import com.ai.gateway.admin.dto.QuotaUpdateRequest;
 import com.ai.gateway.admin.service.AdminService;
 import com.ai.gateway.auth.service.ApiKeyService;
@@ -51,6 +52,7 @@ public class AdminController {
     }
 
     @Operation(summary = "调整用户配额（单边可调）")
+    @Audited(action = "USER_QUOTA", desc = "调整用户配额")
     @PutMapping("/users/{id}/quota")
     public Result<Void> adjustQuota(@PathVariable Long id, @RequestBody QuotaUpdateRequest request) {
         adminService.adjustQuota(id, request.getDailyQuota(), request.getMonthlyQuota());
@@ -58,6 +60,7 @@ public class AdminController {
     }
 
     @Operation(summary = "启用/禁用账号（最后一名管理员不可禁用）")
+    @Audited(action = "USER_STATUS", desc = "启用/禁用账号")
     @PutMapping("/users/{id}/status")
     public Result<Void> toggleStatus(@PathVariable Long id, @RequestParam Integer status) {
         adminService.toggleStatus(id, status);
@@ -65,6 +68,7 @@ public class AdminController {
     }
 
     @Operation(summary = "变更角色（最后一名管理员不可降级）")
+    @Audited(action = "USER_ROLE", desc = "变更用户角色")
     @PutMapping("/users/{id}/role")
     public Result<Void> changeRole(@PathVariable Long id, @RequestParam String role) {
         adminService.changeRole(id, role);
@@ -96,6 +100,7 @@ public class AdminController {
     }
 
     @Operation(summary = "吊销任意 API Key")
+    @Audited(action = "APIKEY_REVOKE", desc = "吊销 API Key")
     @DeleteMapping("/apikeys/{id}")
     public Result<Void> revokeApiKey(@PathVariable Long id) {
         apiKeyService.revokeByAdmin(id);

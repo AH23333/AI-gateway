@@ -1,5 +1,6 @@
 package com.ai.gateway.admin.controller;
 
+import com.ai.gateway.admin.annotation.Audited;
 import com.ai.gateway.admin.dto.ModelUpsertRequest;
 import com.ai.gateway.admin.dto.PriceUpsertRequest;
 import com.ai.gateway.admin.service.ModelAdminService;
@@ -41,18 +42,21 @@ public class ModelAdminController {
     }
 
     @Operation(summary = "新增模型")
+    @Audited(action = "MODEL_CREATE", desc = "新增模型")
     @PostMapping
     public Result<ModelInfo> createModel(@RequestBody ModelUpsertRequest request) {
         return Result.ok(modelAdminService.createModel(request));
     }
 
     @Operation(summary = "编辑模型（编码不建议修改）")
+    @Audited(action = "MODEL_UPDATE", desc = "编辑模型")
     @PutMapping("/{id}")
     public Result<ModelInfo> updateModel(@PathVariable Long id, @RequestBody ModelUpsertRequest request) {
         return Result.ok(modelAdminService.updateModel(id, request));
     }
 
     @Operation(summary = "删除模型（有调用日志/被引用时拒绝，只能禁用）")
+    @Audited(action = "MODEL_DELETE", desc = "删除模型")
     @DeleteMapping("/{id}")
     public Result<Void> deleteModel(@PathVariable Long id) {
         modelAdminService.deleteModel(id);
@@ -66,6 +70,7 @@ public class ModelAdminController {
     }
 
     @Operation(summary = "新增价格版本（立即生效）")
+    @Audited(action = "MODEL_PRICE_ADD", desc = "新增模型价格版本")
     @PostMapping("/{id}/prices")
     public Result<ModelPrice> addPrice(@PathVariable Long id, @RequestBody PriceUpsertRequest request) {
         return Result.ok(modelAdminService.addPrice(id, request));

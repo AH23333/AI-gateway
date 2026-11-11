@@ -277,5 +277,34 @@ CREATE TABLE IF NOT EXISTS t_system_config (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '系统设置（DB 覆盖 yml，管理端在线改免重启）';
 
 -- ==============================================================================
+-- 12. t_audit_log —— 操作审计日志（v2.5 操作审计，1Panel 对标项 2）
+--
+-- · AOP 切面（admin 域 AuditAspect）拦截管理端写操作（@Audited）自动落库，
+--   四要素：who(user_id/username) / when(created_at) / what(action/uri/params) / 结果(success/error_msg)；
+-- · 审计落库失败只记 error 日志，绝不影响业务主流程（审计是旁路）；
+-- · params 已脱敏（password/secret/token/apikey/credential → ***）并截断 1000 字符；
+-- · 只增不改（append-only），过期清理归 §7.1 项③计划任务（暂未实现，勿手工 DELETE）。
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS t_audit_log (
+    id          BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
+    user_id     BIGINT                 DEFAULT NULL COMMENT '操作人用户 ID（X-User-Id 注入）',
+    username    VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '操作人用户名（冗余，检索展示）',
+    action      VARCHAR(64)   NOT NULL COMMENT '动作编码（USER_STATUS/SETTING_UPDATE 等）',
+    action_desc VARCHAR(100)  NOT NULL DEFAULT '' COMMENT '动作描述（人类可读）',
+    http_method VARCHAR(10)   NOT NULL DEFAULT '' COMMENT 'HTTP 方法（PUT/POST/DELETE）',
+    uri         VARCHAR(255)  NOT NULL COMMENT '请求 URI（含路径变量，即操作对象）',
+    params      VARCHAR(1000)          DEFAULT NULL COMMENT '参数摘要（query+body 脱敏截断）',
+    success     TINYINT       NOT NULL DEFAULT 1 COMMENT '结果：1 成功 0 失败',
+    error_msg   VARCHAR(500)           DEFAULT NULL COMMENT '失败原因（成功为 NULL）',
+    ip          VARCHAR(64)            DEFAULT NULL COMMENT '客户端 IP（反代取 X-Forwarded-For 首跳）',
+    cost_ms     BIGINT                 DEFAULT NULL COMMENT '耗时（毫秒）',
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    PRIMARY KEY (id),
+    KEY idx_audit_user (user_id),
+    KEY idx_audit_created (created_at),
+    KEY idx_audit_action (action)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '操作审计日志（管理端写操作 AOP 切面落库）';
+
+-- ==============================================================================
 -- 建表完成。接下来执行 seed.sql 灌入种子数据（管理员/模型/价格/路由配置/系统设置）。
 -- ==============================================================================

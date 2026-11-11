@@ -1,5 +1,6 @@
 package com.ai.gateway.admin.controller;
 
+import com.ai.gateway.admin.annotation.Audited;
 import com.ai.gateway.admin.service.RoutingAdminService;
 import com.ai.gateway.common.dto.PageResult;
 import com.ai.gateway.common.dto.Result;
@@ -37,6 +38,7 @@ public class RoutingAdminController {
     }
 
     @Operation(summary = "路由总开关（0=直连基线 1=智能路由）")
+    @Audited(action = "ROUTING_SWITCH", desc = "路由总开关切换")
     @PutMapping("/switch")
     public Result<Void> updateSwitch(@RequestParam Integer enabled) {
         routingAdminService.updateSwitch(enabled);
@@ -44,6 +46,7 @@ public class RoutingAdminController {
     }
 
     @Operation(summary = "打分权重热更新（w_q + w_c = 1）")
+    @Audited(action = "ROUTING_WEIGHTS", desc = "路由打分权重更新")
     @PutMapping("/weights")
     public Result<Void> updateWeights(@RequestParam Double weightQuality,
                                       @RequestParam Double weightCost) {

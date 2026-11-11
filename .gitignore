@@ -10,3 +10,9 @@ dump.rdb
 *.log
 .env
 .env.*
+
+# ==================== vrp 分析工件（本地工具产物，体积大不入库） ====================
+# .vrp/ = vrp 管道工作目录（facts.db/slices/curate 收据），docs\vrp-analysis\ = 归档 747 文件/208MB
+# 两者均为本地分析工件：交接文档 §8 有索引说明，需要共享时另行打包传输
+.vrp/
+backend/docs/vrp-analysis/

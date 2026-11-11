@@ -136,6 +136,7 @@ const adminNavItems = [
   { path: '/admin/users', label: '用户管理', icon: 'UserFilled' },
   { path: '/admin/models', label: '模型管理', icon: 'Cpu' },
   { path: '/admin/settings', label: '系统设置', icon: 'Setting' },
+  { path: '/admin/audit-logs', label: '操作审计', icon: 'Tickets' },
 ]
 
 function handleNewChat() {

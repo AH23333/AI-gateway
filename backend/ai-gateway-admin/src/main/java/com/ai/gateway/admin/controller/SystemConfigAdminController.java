@@ -1,5 +1,6 @@
 package com.ai.gateway.admin.controller;
 
+import com.ai.gateway.admin.annotation.Audited;
 import com.ai.gateway.admin.dto.SettingsUpdateRequest;
 import com.ai.gateway.admin.service.SystemConfigService;
 import com.ai.gateway.common.pojo.SystemConfig;
@@ -36,6 +37,7 @@ public class SystemConfigAdminController {
     }
 
     @Operation(summary = "更新设置项（即时生效，免重启）")
+    @Audited(action = "SETTING_UPDATE", desc = "更新系统设置")
     @PutMapping
     public Result<SystemConfig> update(
             @RequestBody SettingsUpdateRequest request,

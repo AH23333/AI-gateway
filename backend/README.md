@@ -142,6 +142,7 @@ scripts\stop-all-windows.bat       :: 停止（Redis/MySQL 常驻不动）
 POST /auth/register|login|refresh|logout        # 认证
 GET  /admin/users|dashboard|apikeys             # 管理端（ADMIN）
 PUT  /admin/users/{id}/quota|status|role
+GET  /admin/audit-logs                          # 操作审计分页（v2.5，ADMIN）
 GET/POST/PUT/DELETE /admin/models[...]          # 模型 CRUD + 价格版本
 GET/PUT /admin/routing/config|switch|weights|analysis|decisions
 GET  /api/user/info|apikeys|chat/logs|chat/search   # 用户自助
@@ -229,6 +230,7 @@ ChatController 埋点（beginCall/endCall + 流式 CAS 归位）
 | `t_invoke_log_v2` | 调用明细（月分区窄表） | 90 天，`DROP PARTITION` 清理 |
 | `t_chat_message` | 会话内容（ngram 全文检索） | 90 天，定期 DELETE |
 | `t_billing_daily` | 日汇总（看板趋势） | 永久 |
+| `t_audit_log` | 操作审计（管理端写操作留痕，v2.5） | append-only；清理归计划任务（§7.1 项③） |
 | `data/payload/` | D6 报文采样（每分钟首请求） | 30 天，手工/脚本清理 |
 
 分区维护（每季度一次，毫秒级）：
@@ -246,6 +248,23 @@ ALTER TABLE t_invoke_log_v2 DROP PARTITION p202611;  -- 到期清理
 - AccessToken 登出进 Redis 黑名单（TTL=剩余有效期）；
 - API Key 格式 `sk-` + 32 位随机 hex，前 8 位作展示前缀；
 - BCrypt（10 轮）存登录密码。
+
+### 7.5 操作审计（v2.5 新增，1Panel 业务对标项②）
+
+```
+管理端写操作（11 个 @Audited 注解方法）
+→ AuditAspect（AOP @Around）旁路组装四要素：
+   who（access 过滤器注入的 X-User-Id/X-Username，客户端伪造无效）
+   when（created_at） / what（动作+描述+HTTP 方法+URI 含路径变量+脱敏参数摘要）
+   / 结果（success 1|0 + error_msg + cost_ms + ip）
+→ t_audit_log（append-only，审计落库失败只记日志、绝不影响业务）
+→ GET /admin/audit-logs（分页 + 操作人/动作/结果/时间范围过滤）
+→ 前端"操作审计"页（ADMIN，/admin/audit-logs）
+```
+
+- 参数摘要脱敏：password/secret/token/apikey/credential 值替换 `***`（"key" 不脱敏，保留配置键可读），截断 1000 字符；
+- BizException 也记失败审计后原样重抛，交 GlobalExceptionHandler 统一返回；
+- 审计查询鉴权复用 RBAC：`/admin/**` 由 access 层守卫（ADMIN）。
 
 ## 8. 常见问题
 
